@@ -10,7 +10,7 @@ Este repositório tem a intenção de ser um esforço permanente de trabalho e o
 * Implement and Manage Storage
 * [Deploy and Manage Azure Compute Resources](deployAndManageAzureComputeResources.md)
 * Implement and Manage Virtual Networking
-* Monitor and Maintain Azure Resources
+* [Monitor and Maintain Azure Resources](monitorAndMaintainAzureResources.md)
 
 ## SCRIPT RESOURCES
 

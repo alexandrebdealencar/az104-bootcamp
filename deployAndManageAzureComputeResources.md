@@ -10,7 +10,7 @@
 
 ### Create and configure virtual machines
 
-* [Create a virtual machine](compute/createVirtualMachine.md)
+* Create a virtual machine [manually](compute/createVirtualMachine.md) or using an [ARM template](compute/createVirtualMachineARM.md)
 * Configure Azure Disk Encryption
 * Move a virtual machine to another resource group, subscription, or region
 * [Manage virtual machine sizes](compute/manageVirtualMachineSizes.md)
