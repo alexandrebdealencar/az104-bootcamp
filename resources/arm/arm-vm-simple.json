@@ -1,0 +1,215 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+
+        "vm-name": {
+            "type": "string",
+            "metadata": {
+                "description": "Please type the name of the VM"
+            }
+        },
+
+        "virtual-network": {
+            "type": "string",
+            "metadata": {
+                "description": "Please type the name of the Virtual Network"
+            }
+        },
+
+        "storage-account": {
+            "type": "string",
+            "metadata": {
+                "description": "Please type the name of the Storage Account"
+            }
+        },
+
+        "vmpassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Please type the password"
+            }
+        }
+        
+
+        
+    },
+    "functions": [],
+    "variables": {
+        "PublicIP": "[concat(parameters('vm-name'), '-ip')]",
+        "NetworkSG": "[concat(parameters('vm-name'), '-nsg')]",
+        "VirtualNetwork": "[concat(parameters('virtual-network'), '-vnet')]",
+        "VirtualNetwork-SubNet": "[concat(parameters('virtual-network'), '-snet')]",
+        "NetworkInterface": "[concat(parameters('vm-name'), '-nic')]",
+        "Disk": "[concat(parameters('vm-name'), '_disk')]",
+        "StorageAccount": "[concat(parameters('storage-account'), 'ussa')]"
+    },
+    "resources": [
+        {
+            "name": "[variables('StorageAccount')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2021-04-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "StorageV2"
+        },
+        {
+            "name": "[variables('PublicIP')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "PublicIPAddress"
+            },
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "name": "[variables('NetworkSG')]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "remoteDesktop",
+                        "properties": {
+                            "description": "description",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "3389",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                                        {
+                        "name": "nsgRuleHttp80",
+                        "properties": {
+                            "description": "description",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 110,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('VirtualNetwork')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('NetworkSG'))]"
+            ],
+            "tags": {
+                "displayName": "[variables('VirtualNetwork')]"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('VirtualNetwork-SubNet')]",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('NetworkSG'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('NetworkInterface')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('PublicIP'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('VirtualNetwork'))]"
+            ],
+            "tags": {
+                "displayName": "[variables('NetworkInterface')]"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "[variables('publicIP')]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('PublicIP'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VirtualNetwork'), variables('VirtualNetwork-SubNet'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('vm-name')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-03-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('NetworkInterface'))]"
+            ],
+            "tags": {
+                "displayName": "[parameters('vm-name')]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D2s_v6"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vm-name')]",
+
+                    "adminUsername": "localadmin",
+                    "adminPassword": "[parameters('vmpassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2019-datacenter-gensecond",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[variables('Disk')]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('NetworkInterface'))]"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
