@@ -34,7 +34,7 @@
         "VirtualNetwork": "[concat(parameters('virtual-network'), '-vnet')]",
         "VirtualNetwork-SubNet": "[concat(parameters('virtual-network'), '-snet')]",
         "NetworkInterface": "[concat(parameters('vm-name'), '-nic')]",
-        "Disk": "[concat(parameters('vm-name'), '_Disk')]"
+        "Disk": "[concat(parameters('vm-name'), '_disk')]"
     },
     "resources": [
         {
@@ -46,10 +46,10 @@
                 "displayName": "PublicIPAddress"
             },
             "sku": {
-                "name": "Basic"
+                "name": "Standard"
             },
             "properties": {
-                "publicIPAllocationMethod": "Dynamic"
+                "publicIPAllocationMethod": "Static"
             }
         },
         {
@@ -167,8 +167,8 @@
                 "osProfile": {
                     "computerName": "[parameters('vm-name')]",
 
-                    "adminUsername": "enrico_azure",
-                    "adminPassword": "[parameters('vmpassowrd')]"
+                    "adminUsername": "localadmin",
+                    "adminPassword": "[parameters('vmpassword')]"
                 },
                 "storageProfile": {
                     "imageReference": {
