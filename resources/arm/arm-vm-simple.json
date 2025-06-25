@@ -2,65 +2,56 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-
-        "vm-name": {
+        "vmusername":{
             "type": "string",
             "metadata": {
-                "description": "Please type the name of the VM"
+                "description": "Please type the username"
             }
         },
-
-         "virtual-network": {
-            "type": "string",
-            "metadata": {
-                "description": "Please type the name of the Virtual Network"
-            }
-        },
-
-        "vmpassword": {
+        "vmpassword":{
             "type": "securestring",
             "metadata": {
                 "description": "Please type the password"
             }
         }
-        
-
-        
     },
     "functions": [],
-    "variables": {
-        "PublicIP": "[concat(parameters('vm-name'), '-ip')]",
-        "NetworkSG": "[concat(parameters('vm-name'), '-nsg')]",
-        "VirtualNetwork": "[concat(parameters('virtual-network'), '-vnet')]",
-        "VirtualNetwork-SubNet": "[concat(parameters('virtual-network'), '-snet')]",
-        "NetworkInterface": "[concat(parameters('vm-name'), '-nic')]",
-        "Disk": "[concat(parameters('vm-name'), '_disk')]"
-    },
+    "variables": {},
     "resources": [
         {
-            "name": "[variables('PublicIP')]",
+            "name": "labaz104bussa",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2021-04-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "StorageV2"
+        },
+        {
+            "name": "lab-az104b-ip",
             "type": "Microsoft.Network/publicIPAddresses",
             "apiVersion": "2020-11-01",
             "location": "[resourceGroup().location]",
             "tags": {
                 "displayName": "PublicIPAddress"
             },
-            "sku": {
-                "name": "Standard"
-            },
             "properties": {
-                "publicIPAllocationMethod": "Static"
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[toLower('lab-az104b')]"
+                }
             }
         },
         {
-            "name": "[variables('NetworkSG')]",
+            "name": "lab-az104b-nsg",
             "type": "Microsoft.Network/networkSecurityGroups",
             "apiVersion": "2020-11-01",
             "location": "[resourceGroup().location]",
             "properties": {
                 "securityRules": [
                     {
-                        "name": "remoteDesktop",
+                        "name": "nsgRule1",
                         "properties": {
                             "description": "description",
                             "protocol": "Tcp",
@@ -72,34 +63,20 @@
                             "priority": 100,
                             "direction": "Inbound"
                         }
-                    },
-                                        {
-                        "name": "nsgRuleHttp80",
-                        "properties": {
-                            "description": "description",
-                            "protocol": "Tcp",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "80",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*",
-                            "access": "Allow",
-                            "priority": 110,
-                            "direction": "Inbound"
-                        }
                     }
                 ]
             }
         },
         {
-            "name": "[variables('VirtualNetwork')]",
+            "name": "lab-az104b-vnet",
             "type": "Microsoft.Network/virtualNetworks",
             "apiVersion": "2020-11-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('NetworkSG'))]"
+                "[resourceId('Microsoft.Network/networkSecurityGroups', 'lab-az104b-nsg')]"
             ],
             "tags": {
-                "displayName": "[variables('VirtualNetwork')]"
+                "displayName": "lab-az104b-vnet"
             },
             "properties": {
                 "addressSpace": {
@@ -109,11 +86,11 @@
                 },
                 "subnets": [
                     {
-                        "name": "[variables('VirtualNetwork-SubNet')]",
+                        "name": "lab-az104b-snet",
                         "properties": {
                             "addressPrefix": "10.0.0.0/24",
                             "networkSecurityGroup": {
-                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('NetworkSG'))]"
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'lab-az104b-nsg')]"
                             }
                         }
                     }
@@ -121,28 +98,28 @@
             }
         },
         {
-            "name": "[variables('NetworkInterface')]",
+            "name": "lab-az104b-nic",
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "2020-11-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/publicIPAddresses', variables('PublicIP'))]",
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('VirtualNetwork'))]"
+                "[resourceId('Microsoft.Network/publicIPAddresses', 'lab-az104b-ip')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', 'lab-az104b-vnet')]"
             ],
             "tags": {
-                "displayName": "[variables('NetworkInterface')]"
+                "displayName": "Lab-AZ104"
             },
             "properties": {
                 "ipConfigurations": [
                     {
-                        "name": "[variables('publicIP')]",
+                        "name": "ipConfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('PublicIP'))]"
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'lab-az104b-ip')]"
                             },
                             "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VirtualNetwork'), variables('VirtualNetwork-SubNet'))]"
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'lab-az104b-vnet', 'lab-az104b-snet')]"
                             }
                         }
                     }
@@ -150,35 +127,36 @@
             }
         },
         {
-            "name": "[parameters('vm-name')]",
+            "name": "lab-az104b-vm",
             "type": "Microsoft.Compute/virtualMachines",
             "apiVersion": "2021-03-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/networkInterfaces', variables('NetworkInterface'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', toLower('labaz104aussa'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', 'lab-az104b-nic')]"
             ],
             "tags": {
-                "displayName": "[parameters('vm-name')]"
+                "displayName": "Lab-Az104a"
             },
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "Standard_D2s_v6"
+                    "vmSize": "Standard_A2_v2"
                 },
                 "osProfile": {
-                    "computerName": "[parameters('vm-name')]",
+                    "computerName": "lab-az104b-vm",
 
-                    "adminUsername": "localadmin",
+                    "adminUsername": "[parameters('vmusername')]",
                     "adminPassword": "[parameters('vmpassword')]"
                 },
                 "storageProfile": {
                     "imageReference": {
                         "publisher": "MicrosoftWindowsServer",
                         "offer": "WindowsServer",
-                        "sku": "2019-datacenter-gensecond",
+                        "sku": "2019-R2-Datacenter",
                         "version": "latest"
                     },
                     "osDisk": {
-                        "name": "[variables('Disk')]",
+                        "name": "lab-az104b-vm-OSDisk",
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
@@ -186,9 +164,15 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('NetworkInterface'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'lab-az104b-nic')]"
                         }
                     ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[reference(resourceId('Microsoft.Storage/storageAccounts/', toLower('labaz104bussa'))).primaryEndpoints.blob]"
+                    }
                 }
             }
         }
