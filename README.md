@@ -24,6 +24,6 @@ Este repositório tem a intenção de ser um esforço permanente de trabalho e o
 * [Study Guide for Exam AZ-104](https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104)
 * [Microsoft Learning / AZ-104 - Microsoft Azure Administrator](https://github.com/MicrosoftLearning/AZ-104-MicrosoftAzureAdministrator)
 
-### Learning Resources - Labs
+## Learning Resources - Labs
 
 * [Microsoft Learning / AZ-104 Labs](https://microsoftlearning.github.io/AZ-104-MicrosoftAzureAdministrator/)
